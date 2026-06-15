@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import heroRoof from "@/assets/hero-roof.jpg";
 import workCrew from "@/assets/work-crew.jpg";
@@ -359,35 +360,143 @@ function CTA() {
       className="relative py-24 md:py-32 text-background overflow-hidden"
       style={{ background: "var(--gradient-ember)" }}
     >
-      <div className="mx-auto max-w-5xl px-6 text-center">
-        <h2 className="text-4xl md:text-6xl font-black tracking-tight">
-          Ready for a roof you can stop
-          <br />
-          worrying about?
-        </h2>
-        <p className="mt-6 text-background/90 text-lg max-w-2xl mx-auto">
-          Call Shawn directly for a no-pressure, on-site estimate. Most
-          properties in the Lansing area can be quoted within a few days.
-        </p>
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
-          <a
-            href={PHONE_HREF}
-            className="rounded-md bg-[var(--slate-deep)] px-8 py-4 text-base font-bold text-background hover:opacity-90 transition shadow-[var(--shadow-elevated)]"
-          >
-            📞 {PHONE}
-          </a>
-          <a
-            href="mailto:info@donahueconstructioninc.com"
-            className="rounded-md border-2 border-background px-8 py-4 text-base font-bold text-background hover:bg-background hover:text-[var(--ember)] transition"
-          >
-            Email Us
-          </a>
+      <div className="mx-auto max-w-6xl px-6 grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <h2 className="text-4xl md:text-5xl font-black tracking-tight">
+            Ready for a roof you can stop worrying about?
+          </h2>
+          <p className="mt-6 text-background/90 text-lg">
+            Tell us a bit about your project and Shawn will get back to you
+            with a no-pressure estimate. Prefer to talk? Call us directly.
+          </p>
+          <div className="mt-8 space-y-3 text-background/95">
+            <a href={PHONE_HREF} className="flex items-center gap-3 font-semibold hover:underline">
+              <span className="size-10 rounded-md bg-background/15 flex items-center justify-center">📞</span>
+              {PHONE}
+            </a>
+            <a href="mailto:info@donahueconstructioninc.com" className="flex items-center gap-3 font-semibold hover:underline">
+              <span className="size-10 rounded-md bg-background/15 flex items-center justify-center">✉️</span>
+              info@donahueconstructioninc.com
+            </a>
+            <div className="flex items-center gap-3">
+              <span className="size-10 rounded-md bg-background/15 flex items-center justify-center">📍</span>
+              <span>{ADDRESS}</span>
+            </div>
+          </div>
         </div>
-        <div className="mt-8 text-background/90 text-sm">{ADDRESS}</div>
+        <ContactForm />
       </div>
     </section>
   );
 }
+
+function ContactForm() {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = new FormData(form);
+    const name = String(data.get("name") ?? "").trim();
+    const email = String(data.get("email") ?? "").trim();
+    const phone = String(data.get("phone") ?? "").trim();
+    const service = String(data.get("service") ?? "").trim();
+    const message = String(data.get("message") ?? "").trim();
+
+    const next: Record<string, string> = {};
+    if (!name || name.length > 100) next.name = "Please enter your name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 255)
+      next.email = "Please enter a valid email.";
+    if (phone && phone.length > 30) next.phone = "Phone looks too long.";
+    if (!message || message.length > 2000)
+      next.message = "Please add a short message.";
+    setErrors(next);
+    if (Object.keys(next).length) return;
+
+    const subject = `Roofing inquiry from ${name}`;
+    const body = [
+      `Name: ${name}`,
+      `Email: ${email}`,
+      phone ? `Phone: ${phone}` : null,
+      service ? `Service: ${service}` : null,
+      "",
+      message,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    window.location.href = `mailto:info@donahueconstructioninc.com?subject=${encodeURIComponent(
+      subject,
+    )}&body=${encodeURIComponent(body)}`;
+  };
+
+  const fieldClass =
+    "w-full rounded-md bg-background/10 border border-background/30 px-4 py-3 text-background placeholder:text-background/60 focus:outline-none focus:ring-2 focus:ring-background focus:bg-background/20 transition";
+  const labelClass = "block text-xs font-semibold uppercase tracking-wider text-background/90 mb-1.5";
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      noValidate
+      className="bg-[var(--slate-deep)]/40 backdrop-blur-sm border border-background/20 rounded-2xl p-6 md:p-8 shadow-[var(--shadow-elevated)]"
+    >
+      <div className="text-xs uppercase tracking-[0.25em] font-bold text-background/80">
+        Free Estimate
+      </div>
+      <h3 className="mt-1 text-2xl font-black text-background">
+        Tell us about your roof
+      </h3>
+
+      <div className="mt-6 grid sm:grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass} htmlFor="name">Name</label>
+          <input id="name" name="name" type="text" maxLength={100} required className={fieldClass} placeholder="Jane Smith" />
+          {errors.name && <p className="mt-1 text-xs text-background font-semibold">{errors.name}</p>}
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="phone">Phone</label>
+          <input id="phone" name="phone" type="tel" maxLength={30} className={fieldClass} placeholder="(517) 555-0123" />
+          {errors.phone && <p className="mt-1 text-xs text-background font-semibold">{errors.phone}</p>}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <label className={labelClass} htmlFor="email">Email</label>
+        <input id="email" name="email" type="email" maxLength={255} required className={fieldClass} placeholder="you@example.com" />
+        {errors.email && <p className="mt-1 text-xs text-background font-semibold">{errors.email}</p>}
+      </div>
+
+      <div className="mt-4">
+        <label className={labelClass} htmlFor="service">Service Needed</label>
+        <select id="service" name="service" defaultValue="" className={fieldClass}>
+          <option value="" className="text-foreground">Select one…</option>
+          <option className="text-foreground">Roof Replacement</option>
+          <option className="text-foreground">Roof Repair</option>
+          <option className="text-foreground">Garage / Outbuilding</option>
+          <option className="text-foreground">Inspection / Estimate</option>
+          <option className="text-foreground">Other</option>
+        </select>
+      </div>
+
+      <div className="mt-4">
+        <label className={labelClass} htmlFor="message">Project Details</label>
+        <textarea id="message" name="message" rows={4} maxLength={2000} required className={fieldClass} placeholder="Tell us a bit about your home and the issue…" />
+        {errors.message && <p className="mt-1 text-xs text-background font-semibold">{errors.message}</p>}
+      </div>
+
+      <button
+        type="submit"
+        className="mt-6 w-full rounded-md bg-[var(--slate-deep)] px-6 py-4 text-base font-bold text-background hover:opacity-90 transition shadow-[var(--shadow-elevated)]"
+      >
+        Request My Free Estimate
+      </button>
+      <p className="mt-3 text-xs text-background/75 text-center">
+        Opens your email app to send to info@donahueconstructioninc.com.
+      </p>
+    </form>
+  );
+}
+
 
 function Footer() {
   return (
